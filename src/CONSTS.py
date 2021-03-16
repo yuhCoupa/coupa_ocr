@@ -1,0 +1,11 @@
+import multiprocessing
+NUM_CPUS = multiprocessing.cpu_count()
+ORIGIN_HEIGHT = 1024
+
+MIN_NUM_VOTES = 200
+NON_MAX_SUP_RANGE = 2
+
+MIN_AREA_RATIO = 0.25
+NUM_CANDIDATE_VERTICES = 64
+
+EXPAND_PIXEL = 2
