@@ -1,3 +1,4 @@
+import re
 import cv2
 import pandas as pd
 from PIL import Image
@@ -5,7 +6,10 @@ import tesserocr
 from tesserocr import (PyTessBaseAPI, RIL,
                        iterate_level, PSM)
 from scan_doc import ScanDoc
+from src.misc_utils import save_image_opencv
 Image.MAX_IMAGE_PIXELS = 1000000000
+pd.set_option('display.max_rows', 1000)
+pd.options.mode.chained_assignment = None
 
 
 class CoupaOCR:
@@ -39,6 +43,8 @@ class CoupaOCR:
             y1.append(_y1)
             x2.append(_x2)
             y2.append(_y2)
+            cv2.rectangle(scanned_doc, (_x1, _y1), (_x2, _y2), (255, 0, 0), 2)
+        save_image_opencv(scanned_doc, 'text_rec')
         page_height = scanned_doc.shape[0]
         page_width = scanned_doc.shape[1]
         df_out = pd.DataFrame()
@@ -52,8 +58,13 @@ class CoupaOCR:
         return df_out
 
 
+def remove_new_line_symbol(data):
+    return re.sub("\n", "", data)
+
+
 if __name__ == '__main__':
     input_img = cv2.imread('test_img/img_7.jpg')
     coupa_ocr = CoupaOCR()
     df_out = coupa_ocr.extract_text_to_df(input_img)
+    df_out.loc[:, 'Data'] = df_out.Data.map(remove_new_line_symbol)
     import pdb; pdb.set_trace()

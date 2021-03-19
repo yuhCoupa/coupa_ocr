@@ -62,14 +62,9 @@ class ScanDoc:
         # convert the image to gray scale
         gray_image = cv2.cvtColor(self.input_image, cv2.COLOR_BGR2GRAY)
         # blur the image to remove the high frequency noise
-        gray_image_blured = cv2.blur(gray_image, (3, 3))
-        gray_image_thresh = cv2.threshold(gray_image_blured, 0, 255,
-                                          cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-        # erode edges
-        kernel = np.ones((3, 3), np.uint8)
-        dilated_gray_image = cv2.dilate(gray_image_thresh, kernel)
+        gray_image_blured = cv2.GaussianBlur(gray_image, (5, 5), 0)
         # perform Canny edge detection
-        edged_image = cv2.Canny(dilated_gray_image, 20, 120)
+        edged_image = cv2.Canny(gray_image_blured, 75, 200)
         save_image_opencv(edged_image, 'canny')
         return edged_image
 
@@ -97,13 +92,20 @@ class ScanDoc:
         plot_hough_lines(threshold_hed, deepcopy(self.input_image))
         vertices = get_intersection_vertices(threshold_hed, min_votes)
         vertices = np.unique(vertices, axis=0)
+        full_point_image = deepcopy(self.input_image)
+        new_image = deepcopy(self.input_image)
+        for x, y in vertices:
+            cv2.circle(full_point_image, (x, y),
+                       radius=1, color=(0, 0, 255), thickness=5)
+
+        save_image_opencv(full_point_image, 'hed_point_full')
         if vertices.shape[0] <= NUM_CANDIDATE_VERTICES:
             filtered_vertices = non_max_suppression_vertices(vertices,
                                                              hed, 1)
             for x, y in filtered_vertices:
-                cv2.circle(self.input_image, (x, y),
+                cv2.circle(new_image, (x, y),
                            radius=1, color=(0, 0, 255), thickness=5)
-            save_image_opencv(self.input_image, 'hed_point')
+            save_image_opencv(new_image, 'hed_point')
             return filtered_vertices
         filtered_vertices = non_max_suppression_vertices(vertices,
                                                          hed)
@@ -115,9 +117,9 @@ class ScanDoc:
             filtered_vertices = filtered_vertices[:NUM_CANDIDATE_VERTICES]
 
         for x, y in filtered_vertices:
-            cv2.circle(self.input_image, (x, y),
+            cv2.circle(new_image, (x, y),
                        radius=1, color=(0, 0, 255), thickness=5)
-        save_image_opencv(self.input_image, 'hed_point')
+        save_image_opencv(new_image, 'hed_point')
         return filtered_vertices
 
     def detect_doc_boundary(self, hed, edged_image):
@@ -199,6 +201,6 @@ class ScanDoc:
 
 if __name__ == '__main__':
     freeze_support()
-    input_img = cv2.imread('test_img/img_3.jpg')
+    input_img = cv2.imread('test_img/img_7.jpg')
     sd = ScanDoc(input_img)
     scanned_doc = sd.get_greyscale_scan()
