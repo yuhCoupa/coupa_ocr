@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 from .misc_utils import save_image_opencv
-from .CONSTS import MIN_NUM_VOTES
+from .CONSTS import MIN_NUM_VOTES, NUM_HOUGH_LINES
 
 
 def plot_hough_lines(edges, origin_image):
@@ -9,7 +9,7 @@ def plot_hough_lines(edges, origin_image):
     get and plot hough lines
     '''
     lines = cv2.HoughLines(edges, 1, np.pi / 180, MIN_NUM_VOTES)
-    for rho, theta in np.squeeze(lines)[:20, ]:
+    for rho, theta in np.squeeze(lines)[:NUM_HOUGH_LINES, ]:
         a = np.cos(theta)
         b = np.sin(theta)
         x0 = a * rho

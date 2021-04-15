@@ -191,6 +191,6 @@ class ScanDoc:
 
 if __name__ == '__main__':
     freeze_support()
-    input_img = cv2.imread('test_img/img_20.jpg')
+    input_img = cv2.imread('test_img/img_19.jpg')
     sd = ScanDoc(input_img)
     scanned_doc = sd.get_greyscale_scan()
