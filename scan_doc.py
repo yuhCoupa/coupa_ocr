@@ -99,16 +99,12 @@ class ScanDoc:
                        radius=1, color=(0, 0, 255), thickness=5)
 
         save_image_opencv(full_point_image, 'hed_point_full')
-        if vertices.shape[0] <= NUM_CANDIDATE_VERTICES:
-            filtered_vertices = non_max_suppression_vertices(vertices,
-                                                             hed, 1)
-            for x, y in filtered_vertices:
-                cv2.circle(new_image, (x, y),
-                           radius=1, color=(0, 0, 255), thickness=5)
-            save_image_opencv(new_image, 'hed_point')
-            return filtered_vertices
         filtered_vertices = non_max_suppression_vertices(vertices,
                                                          hed)
+        for x, y in filtered_vertices:
+            cv2.circle(new_image, (x, y),
+                       radius=1, color=(0, 0, 255), thickness=5)
+        save_image_opencv(new_image, 'hed_point')
         filtered_vertices = np.array(filtered_vertices)
         vertice_pixel_intensity = hed[filtered_vertices[:, 1], filtered_vertices[:, 0]]
         filtered_vertices = filtered_vertices[vertice_pixel_intensity.argsort()[::-1]]
@@ -127,16 +123,10 @@ class ScanDoc:
         get document boundary, if failed, reduce min_votes for the hough line
         algorithm
         '''
-        min_votes = MIN_NUM_VOTES
-        for _ in range((MIN_NUM_VOTES - 50) // 10):
-            try:
-                filtered_vertices = self.detect_doc_corner(hed, edged_image, min_votes)
-                quadrilateral = get_bounding_quadrilateral(filtered_vertices,
-                                                           hed,
-                                                           deepcopy(self.input_image))
-                break
-            except ValueError:
-                min_votes -= 10
+        filtered_vertices = self.detect_doc_corner(hed, edged_image, MIN_NUM_VOTES)
+        quadrilateral = get_bounding_quadrilateral(filtered_vertices,
+                                                   hed,
+                                                   deepcopy(self.input_image))
         max_width, max_height = get_max_width_height(quadrilateral * self.scale)
         quadrilateral = np.array(quadrilateral, dtype="float32") * self.scale
         destination_corner = np.array([[0, 0],
@@ -201,6 +191,6 @@ class ScanDoc:
 
 if __name__ == '__main__':
     freeze_support()
-    input_img = cv2.imread('test_img/img_7.jpg')
+    input_img = cv2.imread('test_img/img_20.jpg')
     sd = ScanDoc(input_img)
     scanned_doc = sd.get_greyscale_scan()

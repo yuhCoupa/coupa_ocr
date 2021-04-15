@@ -29,7 +29,7 @@ def get_intersection_vertices(edges, min_votes=MIN_NUM_VOTES):
     '''
     img_shape = edges.shape
     lines = cv2.HoughLines(edges, 1, np.pi / 180, min_votes)
-    lines = np.squeeze(lines)
+    lines = np.squeeze(lines)[:20, :]
     vertices = []
     group_lines = combinations(range(len(lines)), 2)
 
@@ -285,6 +285,7 @@ def get_bounding_quadrilateral(filtered_vertices, hed, test_image):
                                 hed=hed)
     with Pool() as pool:
         _valid_quadrilaterals = pool.map(_parallel_process, quadrilateral_idx)
+    import pdb; pdb.set_trace()
     valid_quadrilaterals_ = list(filter(None, _valid_quadrilaterals))
     valid_quadrilaterals, score = zip(*valid_quadrilaterals_)
     bounding_quadrilateral = valid_quadrilaterals[np.argmax(score)]
