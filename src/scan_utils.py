@@ -5,7 +5,7 @@ from functools import partial
 from copy import deepcopy
 from math import atan, acos
 from itertools import combinations
-from .CONSTS import MIN_NUM_VOTES, MIN_AREA_RATIO, NON_MAX_SUP_RANGE, NUM_HOUGH_LINES, EXPAND_PIXEL
+from .CONSTS import MIN_NUM_VOTES, MIN_AREA_RATIO, NON_MAX_SUP_RANGE, NUM_CPUS, NUM_HOUGH_LINES, EXPAND_PIXEL
 from .misc_utils import save_image_opencv
 
 
@@ -110,7 +110,7 @@ def non_max_suppression_vertices(vertices, hed_image, sup_range=NON_MAX_SUP_RANG
     _parallel_process = partial(_parallel_non_max_sup_vertices_fcn,
                                 sup_range=sup_range,
                                 vertices=vertices, hed_image=hed_image)
-    with Pool() as pool:
+    with Pool(NUM_CPUS) as pool:
         _filtered_vertices = pool.map(_parallel_process, vertices)
     filtered_vertices_ = list(filter(None, _filtered_vertices))
     filtered_vertices = np.unique(filtered_vertices_, axis=0)
@@ -283,7 +283,7 @@ def get_bounding_quadrilateral(filtered_vertices, hed, test_image):
     _parallel_process = partial(_parallel_get_quadrilateral_fcn,
                                 filtered_vertices=filtered_vertices,
                                 hed=hed)
-    with Pool() as pool:
+    with Pool(NUM_CPUS) as pool:
         _valid_quadrilaterals = pool.map(_parallel_process, quadrilateral_idx)
     valid_quadrilaterals_ = list(filter(None, _valid_quadrilaterals))
     valid_quadrilaterals, score = zip(*valid_quadrilaterals_)

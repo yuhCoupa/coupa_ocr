@@ -1,13 +1,18 @@
+from multiprocessing.spawn import import_main_path
+import imutils
+import glob
 import numpy as np
 import cv2
+from timeit import default_timer as timer
 from copy import deepcopy
 from multiprocessing import freeze_support
 from src.misc_utils import save_image_opencv
 from src.plot_utils import plot_hough_lines
 from src.scan_utils import (skeletonize, non_max_suppression_vertices,
                             get_max_width_height, get_intersection_vertices,
-                            get_bounding_quadrilateral)
-from src.CONSTS import ORIGIN_HEIGHT, NUM_CANDIDATE_VERTICES, MIN_NUM_VOTES
+                            get_bounding_quadrilateral, get_quadrilateral_area)
+from src.CONSTS import (ORIGIN_HEIGHT, NUM_CANDIDATE_VERTICES,
+                        MIN_NUM_VOTES, SMOOTH_FACTOR, NUM_CPUS)
 
 
 class CropLayer(object):
@@ -49,7 +54,8 @@ class ScanDoc:
             self.WIDTH = int(ORIGIN_HEIGHT / aspect_ratio)
             self.HEIGHT = ORIGIN_HEIGHT
         self.input_image = cv2.resize(input_image,
-                                      (self.WIDTH, self.HEIGHT))
+                                      (self.WIDTH, self.HEIGHT),
+                                      cv2.INTER_AREA)
         self.scale = input_height / ORIGIN_HEIGHT
 
     def _load_hed_model(self):
@@ -78,8 +84,9 @@ class ScanDoc:
                                     swapRB=False, crop=False)
         self.net.setInput(inp)
         out = self.net.forward()
-        hed = cv2.resize(out[0, 0], (self.WIDTH, self.HEIGHT))
+        hed = out[0, 0]
         hed = (255 * hed).astype("uint8")
+        hed = cv2.fastNlMeansDenoising(hed, SMOOTH_FACTOR, SMOOTH_FACTOR, 21)
         save_image_opencv(hed, 'hed')
         hed_skel = skeletonize(hed).astype("uint8")
         save_image_opencv(hed_skel, 'hed_skel')
@@ -133,7 +140,6 @@ class ScanDoc:
                                        [max_width - 1, 0],
                                        [max_width - 1, max_height - 1],
                                        [0, max_height - 1]], dtype="float32")
-
         return quadrilateral, destination_corner, max_width, max_height
 
     def get_scanned_document(self):
@@ -191,6 +197,10 @@ class ScanDoc:
 
 if __name__ == '__main__':
     freeze_support()
-    input_img = cv2.imread('test_img/img_19.jpg')
+    # for _input_img in glob.glob("test_img/*.jpg"):
+    input_img = cv2.imread("test_img/zeng2.jpg")
+    start_time = timer()
     sd = ScanDoc(input_img)
     scanned_doc = sd.get_greyscale_scan()
+    end_time = timer()
+    print('time taken = {}'.format(end_time - start_time))
